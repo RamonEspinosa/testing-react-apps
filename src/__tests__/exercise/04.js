@@ -5,26 +5,34 @@ import * as React from 'react'
 import {render, screen} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import Login from '../../components/login'
+import {build, fake} from '@jackfranklin/test-data-bot'
 
-test('submitting the form calls onSubmit with username and password', () => {
-  // 🐨 create a variable called "submittedData" and a handleSubmit function that
-  // accepts the data and assigns submittedData to the data that was submitted
-  // 💰 if you need a hand, here's what the handleSubmit function should do:
-  // const handleSubmit = data => (submittedData = data)
-  //
-  // 🐨 render the login with your handleSubmit function as the onSubmit prop
-  //
-  // 🐨 get the username and password fields via `getByLabelText`
-  // 🐨 use userEvent.type to change the username and password fields to
-  //    whatever you want
-  //
-  // 🐨 click on the button with the text "Submit"
-  //
-  // assert that submittedData is correct
-  // 💰 use `toEqual` from Jest: 📜 https://jestjs.io/docs/en/expect#toequalvalue
+const getRandomUsername = f => f.internet.userName()
+const getRandomPassword = f => f.internet.password()
+
+const buildLoginForm = build('Login', {
+  fields: {
+    username: fake(getRandomUsername),
+    password: fake(getRandomPassword),
+  },
 })
 
-/*
-eslint
-  no-unused-vars: "off",
-*/
+test('submitting the form calls onSubmit with username and password', () => {
+  const expectedData = buildLoginForm({
+    overrides: {
+      password: 'abc',
+    },
+  })
+  const handleSubmit = jest.fn()
+  render(<Login onSubmit={handleSubmit} />)
+  const username = screen.getByLabelText(/username/i)
+  const password = screen.getByLabelText(/password/i)
+  const submitButton = screen.getByRole('button', {
+    name: /submit/i,
+  })
+  userEvent.type(username, expectedData.username)
+  userEvent.type(password, expectedData.password)
+  userEvent.click(submitButton)
+  expect(handleSubmit).toHaveBeenCalledWith(expectedData)
+  expect(handleSubmit).toHaveBeenCalledTimes(1)
+})
